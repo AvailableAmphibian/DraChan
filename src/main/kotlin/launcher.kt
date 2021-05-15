@@ -18,7 +18,7 @@ import kotlinx.coroutines.reactor.mono
 @InternalCoroutinesApi
 fun main(args: Array<String>) {
     val token = args[0]
-    val client = DiscordClient.create("ODQzMDM3NzAxNzczOTgzNzg2.YJ-CCg.9n8bWu9dfvJoSamxTAOdRotRQSg")
+    val client = DiscordClient.create(token)
 
     client.gateway()
         .setEnabledIntents(
