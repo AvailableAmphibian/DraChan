@@ -30,7 +30,25 @@
         <sourceDirectory>src/main/kotlin</sourceDirectory>
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
-
+            <plugin>
+                <groupId>com.expediagroup</groupId>
+                <artifactId>graphql-kotlin-maven-plugin</artifactId>
+                <version>4.1.1</version>
+                <executions>
+                    <execution>
+                        <id>generate-graphql-client</id>
+                        <goals>
+                            <goal>introspect-schema</goal>
+                            <goal>generate-client</goal>
+                        </goals>
+                        <configuration>
+                            <endpoint>http://localhost:8080/graphql</endpoint>
+                            <packageName>com.example.generated</packageName>
+                            <schemaFile>${project.build.directory}/schema.graphql</schemaFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -69,6 +87,23 @@
             <artifactId>kotlin-stdlib</artifactId>
             <version>1.4.32</version>
         </dependency>
+        <dependency>
+            <groupId>com.expediagroup</groupId>
+            <artifactId>graphql-kotlin-client</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.expediagroup</groupId>
+            <artifactId>graphql-kotlin-schema-generator</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.1.7</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

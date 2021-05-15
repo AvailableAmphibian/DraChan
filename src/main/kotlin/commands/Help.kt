@@ -1,8 +1,8 @@
 package commands
 
-import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Message
 import discord4j.rest.util.Color
+import isSentByOwner
 import kotlinx.coroutines.reactor.awaitSingle
 
 suspend fun help(message: Message) {
@@ -18,7 +18,6 @@ suspend fun help(message: Message) {
                         |**?help** -> Displays this
                         |**?ping** -> A bit of a useless command, returns "Pong?"
                         |**?embed** -> Shows an embed message, if a channel is specified (id or #), sends it to this channel
-                        |**?bunch** -> Sends 10 message in a channel 
                         |**?copy** -> Copies a message, the message copied is the reply if there's one, else it will be a message which the id as been provided in the command (needs to be fixed for replies)
                         |**?melody** -> Shows something about a friend :eyes:
                         |
@@ -29,5 +28,3 @@ suspend fun help(message: Message) {
             }
     }.awaitSingle()
 }
-
-fun isSentByOwner(message: Message) = message.author.get().id.asLong() == 286443116326682624
