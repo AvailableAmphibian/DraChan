@@ -24,3 +24,7 @@ On this project I used :
 > To communicate between my scripts and Discord.
 - [Kotlin Coroutines (Reactor)](https://github.com/Kotlin/kotlinx.coroutines/tree/master/reactive/kotlinx-coroutines-reactor)
 > To make asynchronous calls as Discord4J uses [Project Reactor](https://projectreactor.io/).
+- [Exposed](https://github.com/JetBrains/Exposed) // [SQLite](https://sqlite.org/index.html)
+> To use a SQL database
+- [GraphQL](https://github.com/ExpediaGroup/graphql-kotlin)
+> For some calls to API (might be removed)

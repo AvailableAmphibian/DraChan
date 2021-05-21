@@ -15,11 +15,13 @@ suspend fun help(message: Message) {
                     .setColor(Color.CYAN)
                     .setDescription(
                         """
-                        |**?help** -> Displays this
-                        |**?ping** -> A bit of a useless command, returns "Pong?"
-                        |**?embed** -> Shows an embed message, if a channel is specified (id or #), sends it to this channel
-                        |**?copy** -> Copies a message, the message copied is the reply if there's one, else it will be a message which the id as been provided in the command (needs to be fixed for replies)
-                        |**?melody** -> Shows something about a friend :eyes:
+                        |**`?help`** -> Displays this
+                        |**`?ping`** -> A bit of a useless command, returns "Pong?"
+                        |**`?embed`** -> Shows an embed message, if a channel is specified (id or #), sends it to this channel
+                        |**`?copy`** -> Copies a message, the message copied is the reply if there's one, else it will be a message which the id as been provided in the command (needs to be fixed for replies)
+                        |**`?melody`** -> Shows something about a friend :eyes: (Needs improvement)
+                        |**`?dice`** -> Returns a random number between 1 and 6 (both included). (Needs improvement)
+                        |**`?reactionRole {channelId} {messageId} {roleMention or id}`** -> Creates a new reaction role . Needs "Manage channel" and "Manage roles" permissions.
                         |
                         |Aliases :
                         |<@!827605045485764650> -> alias of `?help`
