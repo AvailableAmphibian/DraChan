@@ -82,9 +82,9 @@ suspend fun finishReactionRoleCreation(reactionAddEvent: ReactionAddEvent) {
         else -> ""
     }
     try {
-        val reaction = transaction {
+        transaction {
             ReactionRole.new {
-                reactionRoleId = ++ReactionRole.counter
+                reactionRoleId = hashCode()
                 guildId = guild.asLong()
                 messageId = rrMessageId.asLong()
                 roleId = role.toLong()

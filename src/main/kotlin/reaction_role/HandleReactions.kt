@@ -1,7 +1,6 @@
 package reaction_role
 
 import discord4j.common.util.Snowflake
-import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Member
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.event.domain.message.ReactionAddEvent

@@ -1,7 +1,5 @@
 import commands.*
-import discord4j.common.util.Snowflake
 import discord4j.core.DiscordClient
-import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.`object`.presence.Activity
 import discord4j.core.`object`.presence.Presence
 import discord4j.core.event.domain.guild.MemberJoinEvent
@@ -16,15 +14,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.mono
-import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
-import reaction_role.ReactionRole
+import reaction_role.ReactionRoleTable
 import reaction_role.giveRoleOnReaction
 import reaction_role.removeRoleOnReaction
 import java.sql.Connection
 
-@InternalCoroutinesApi
+
 fun main(args: Array<String>) {
     val token = args[0]
     val client = DiscordClient.create(token)
@@ -37,7 +35,11 @@ fun main(args: Array<String>) {
     )
 
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-
+    transaction {
+        addLogger(StdOutSqlLogger)
+        SchemaUtils.create(ReactionRoleTable)
+        println("ReactionRole: ${ReactionRoleTable.selectAll()}")
+    }
 //    val reaction = transaction {
 //        ReactionRole.new {
 //            reactionRoleId = 1
@@ -119,5 +121,3 @@ fun main(args: Array<String>) {
         }.block()
     println("==== Disconnected ====")
 }
-
-
