@@ -30,7 +30,7 @@ suspend fun removeRoleOnReaction(removeEvent: ReactionRemoveEvent) {
     )
 
     try {
-        val reactionRole = getReactionRole(handle)
+        val reactionRole = getReactionRole(handle) ?: return
 
         val roleSnowflake = Snowflake.of(reactionRole.roleId)
         if (handle.member.roleIds.contains(roleSnowflake))
@@ -55,7 +55,8 @@ suspend fun giveRoleOnReaction(reactionAddEvent: ReactionAddEvent) {
 
 
     try {
-        val reactionRole = getReactionRole(handle)
+        val reactionRole = getReactionRole(handle)?: return
+
         val roleSnowflake = Snowflake.of(reactionRole.roleId)
 
         if (!handle.member.roleIds.contains(roleSnowflake))
@@ -66,14 +67,18 @@ suspend fun giveRoleOnReaction(reactionAddEvent: ReactionAddEvent) {
     }
 }
 
-fun getReactionRole(handle: HandleReactions): ReactionRole {
-    return transaction {
-        ReactionRole.find {
-            ReactionRoleTable.guildId.eq(handle.guildId.asLong())
-                .and(ReactionRoleTable.messageId.eq(handle.messageId.asLong()))
-                .and(ReactionRoleTable.emoji.eq(handle.emoji))
-        }.first()
+fun getReactionRole(handle: HandleReactions): ReactionRole? {
+    try {
+        return transaction {
+            ReactionRole.find {
+                ReactionRoleTable.guildId.eq(handle.guildId.asLong())
+                    .and(ReactionRoleTable.messageId.eq(handle.messageId.asLong()))
+                    .and(ReactionRoleTable.emoji.eq(handle.emoji))
+            }.first()
+        }
+    }catch(e:Exception){
+        e.printStackTrace()
     }
-
+    return null
 }
 

@@ -2,3 +2,5 @@
 /target
 /.gitignore
 /mainModule.iml
+/out/
+/src/main/resources/META-INF/

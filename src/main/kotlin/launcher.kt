@@ -70,7 +70,7 @@ fun main(args: Array<String>) {
                         .asFlow()
                         .collect {
                             println(it.message.content)
-                            if (it.message.content == "<@!843037701773983786>") {
+                            if (it.message.content == "<@843037701773983786>") {
                                 help(message = it.message)
                             }
                             val message = it.message.content.substringBefore(" ")
