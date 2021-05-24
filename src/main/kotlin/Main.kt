@@ -37,19 +37,8 @@ fun main(args: Array<String>) {
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
     transaction {
         addLogger(StdOutSqlLogger)
-        SchemaUtils.create(ReactionRoleTable)
         println("ReactionRole: ${ReactionRoleTable.selectAll()}")
     }
-//    val reaction = transaction {
-//        ReactionRole.new {
-//            reactionRoleId = 1
-//            guildId = 333569887135858689
-//            messageId = 700417130469916763
-//            roleId = 704823264580599821
-//            reaction = "🤔"
-//        }
-//    }
-
 
     client.gateway()
         .setEnabledIntents(
@@ -63,7 +52,7 @@ fun main(args: Array<String>) {
             )
         )
         .setInitialPresence {
-            Presence.online(Activity.watching("Albedra programming me."))
+            Presence.online(Activity.watching("Dra  programming me."))
         }.withGateway {
             println("===== Connected =====")
             mono {

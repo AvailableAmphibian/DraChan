@@ -9,13 +9,7 @@ import java.util.*
 class ReactionRole(
     id: EntityID<Int>,
 ) : IntEntity(id) {
-    companion object : IntEntityClass<ReactionRole>(ReactionRoleTable) {
-        var counter = transaction { if (ReactionRole.all().empty()) 0 else ReactionRole.all().last().reactionRoleId }
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(guildId,messageId,roleId,reaction)
-    }
+    companion object : IntEntityClass<ReactionRole>(ReactionRoleTable)
 
     var reactionRoleId by ReactionRoleTable.reactionRoleId
     var guildId by ReactionRoleTable.guildId

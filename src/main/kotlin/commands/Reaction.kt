@@ -10,6 +10,7 @@ import discord4j.rest.util.PermissionSet
 import kotlinx.coroutines.reactor.awaitSingle
 import org.jetbrains.exposed.sql.transactions.transaction
 import reaction_role.ReactionRole
+import java.util.*
 
 object Reaction {
     var isCreatingReactionRole = false
@@ -72,9 +73,9 @@ suspend fun finishReactionRoleCreation(reactionAddEvent: ReactionAddEvent) {
     Reaction.isCreatingReactionRole = false
 
     val emoji = reactionAddEvent.emoji
-    val guild = reactionAddEvent.guildId.get()
-    val rrMessageId = Reaction.message.id
-    val role = Reaction.role.substringAfter("<@&").substringBefore('>')
+    val guild = reactionAddEvent.guildId.get().asLong()
+    val rrMessageId = Reaction.message.id.asLong()
+    val role = Reaction.role.substringAfter("<@&").substringBefore('>').toLong()
 
     val emojiAsString = when (emoji) {
         is ReactionEmoji.Custom -> emoji.id.asString()
@@ -84,10 +85,10 @@ suspend fun finishReactionRoleCreation(reactionAddEvent: ReactionAddEvent) {
     try {
         transaction {
             ReactionRole.new {
-                reactionRoleId = hashCode()
-                guildId = guild.asLong()
-                messageId = rrMessageId.asLong()
-                roleId = role.toLong()
+                reactionRoleId = Objects.hash(guild, rrMessageId, role, emojiAsString)
+                guildId = guild
+                messageId = rrMessageId
+                roleId = role
                 reaction = emojiAsString
             }
 
