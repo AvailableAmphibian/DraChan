@@ -1,5 +1,7 @@
 package commands
 
+import REACTION_ROLE_GIVE
+import REACTION_ROLE_REMOVE_NOT_RETROACTIVE
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.reaction.ReactionEmoji
@@ -9,7 +11,7 @@ import discord4j.rest.util.Permission
 import discord4j.rest.util.PermissionSet
 import kotlinx.coroutines.reactor.awaitSingle
 import org.jetbrains.exposed.sql.transactions.transaction
-import reaction_role.ReactionRole
+import reaction_role.ReactionRoles
 import java.util.*
 
 object Reaction {
@@ -17,6 +19,7 @@ object Reaction {
     lateinit var createRRMessage: Message
     lateinit var message: Message
     lateinit var role: String
+    var rrType: Int = 0
 }
 
 suspend fun reactionRole(message: Message) {
@@ -34,12 +37,12 @@ suspend fun reactionRole(message: Message) {
     }
     //TODO Remove reaction role
     val content = message.content.split(" ")
-    if (content.size != 4) {
+    if (content.size != 5) {
         channel.createMessage {
-            val start = if (content.size > 4) "Too many arguments" else "Not enough arguments"
+            val start = if (content.size > 5) "Too many arguments" else "Not enough arguments"
             it.setContent("$start, please provide the message with the following pattern :")
                 .setEmbed { spec ->
-                    spec.setDescription("?reaction <channelId> <messageId> <@role> <reaction>")
+                    spec.setDescription("?reaction <channelId> <messageId> <@role> <reaction> <reactionRoleType>")
                         .setColor(Color.RED)
                 }
                 .setMessageReference(message.id)
@@ -50,18 +53,34 @@ suspend fun reactionRole(message: Message) {
     val channelId = content[1]
     val messageId = content[2]
     val role = content[3]
+    val rrType = Integer.parseInt(content[4])
+
+    if(rrType !in REACTION_ROLE_GIVE..REACTION_ROLE_REMOVE_NOT_RETROACTIVE){
+        channel.createMessage {
+            it.setContent("Please provide a good idea")
+            it.setEmbed { spec ->
+                spec.addField("REACTION_ROLE_GIVE", "1", true)
+                spec.addField("REACTION_ROLE_REMOVE", "2", true)
+                spec.addField("REACTION_ROLE_GIVE_NOT_RETROACTIVE", "3", true)
+                spec.addField("REACTION_ROLE_REMOVE_NOT_RETROACTIVE", "4", true)
+            }
+        }.awaitSingle()
+        return
+    }
 
     try {
         Reaction.isCreatingReactionRole = true
         Reaction.message = message.client.getMessageById(Snowflake.of(channelId), Snowflake.of(messageId)).awaitSingle()
 
         Reaction.role = role
+        Reaction.rrType = rrType
 
         Reaction.createRRMessage =
             channel.createMessage("Please react to this message with the emoji you want !").awaitSingle()
 
     } catch (e: NumberFormatException) {
-        channel.createMessage("The message doesn't follow the good pattern, please use the following : `?reaction <channelId> <messageId> <@role> <reaction>`").awaitSingle()
+        channel.createMessage("The message doesn't follow the good pattern, please use the following : `?reaction <channelId> <messageId> <@role> <reaction>`")
+            .awaitSingle()
 
         e.printStackTrace()
         Reaction.isCreatingReactionRole = false
@@ -73,7 +92,7 @@ suspend fun finishReactionRoleCreation(reactionAddEvent: ReactionAddEvent) {
     Reaction.isCreatingReactionRole = false
 
     val emoji = reactionAddEvent.emoji
-    val guild = reactionAddEvent.guildId.get().asLong()
+    val guild = reactionAddEvent.guild.awaitSingle().id.asLong()
     val rrMessageId = Reaction.message.id.asLong()
     val role = Reaction.role.substringAfter("<@&").substringBefore('>').toLong()
 
@@ -84,12 +103,13 @@ suspend fun finishReactionRoleCreation(reactionAddEvent: ReactionAddEvent) {
     }
     try {
         transaction {
-            ReactionRole.new {
+            ReactionRoles.new {
                 reactionRoleId = Objects.hash(guild, rrMessageId, role, emojiAsString)
                 guildId = guild
                 messageId = rrMessageId
                 roleId = role
                 reaction = emojiAsString
+                rrType = Reaction.rrType
             }
 
         }

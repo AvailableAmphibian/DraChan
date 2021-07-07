@@ -3,3 +3,5 @@
 /.gitignore
 /mainModule.iml
 /out/
+/build/
+/.gradle/

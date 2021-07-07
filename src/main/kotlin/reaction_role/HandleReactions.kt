@@ -1,83 +1,91 @@
 package reaction_role
 
+import REACTION_ROLE_GIVE
+import REACTION_ROLE_GIVE_NOT_RETROACTIVE
+import REACTION_ROLE_REMOVE
+import REACTION_ROLE_REMOVE_NOT_RETROACTIVE
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Member
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.event.domain.message.ReactionAddEvent
 import discord4j.core.event.domain.message.ReactionRemoveEvent
 import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 
-data class HandleReactions(
+private data class HandleReactions(
     val guildId: Snowflake,
     val messageId: Snowflake,
     val member: Member,
-    val emoji: String
+    val emoji: String,
 )
 
-suspend fun removeRoleOnReaction(removeEvent: ReactionRemoveEvent) {
-    val handle = HandleReactions(
-        guildId = removeEvent.guildId.get(),
-        messageId = removeEvent.messageId,
-        member = removeEvent.guild.awaitSingle().getMemberById(removeEvent.userId).awaitSingle(),
-        emoji = when (val emoji = removeEvent.emoji) {
-            is ReactionEmoji.Unicode -> emoji.raw
-            is ReactionEmoji.Custom -> emoji.id.asString()
-            else -> ""
-        }
+suspend fun handleReactionRemovedEvent(removeEvent: ReactionRemoveEvent) {
+    handleEvent(
+        HandleReactions(
+            guildId = removeEvent.guildId.get(),
+            messageId = removeEvent.messageId,
+            member = removeEvent.guild.awaitSingle().getMemberById(removeEvent.userId).awaitSingle(),
+            emoji = when (val emoji = removeEvent.emoji) {
+                is ReactionEmoji.Unicode -> emoji.raw
+                is ReactionEmoji.Custom -> emoji.id.asString()
+                else -> ""
+            }
+        )
     )
+}
 
-    try {
-        val reactionRole = getReactionRole(handle) ?: return
 
-        val roleSnowflake = Snowflake.of(reactionRole.roleId)
-        if (handle.member.roleIds.contains(roleSnowflake))
-            handle.member.removeRole(roleSnowflake).awaitSingle()
-        println("==== Role ${roleSnowflake.asString()} removed from ${handle.member.displayName} ====")
-    } catch (e: Exception) {
-        println("==== No role to remove ====")
+suspend fun handleReactionAddedEvent(reactionAddEvent: ReactionAddEvent) {
+    handleEvent(
+        HandleReactions(
+            guildId = reactionAddEvent.guildId.get(),
+            messageId = reactionAddEvent.messageId,
+            member = reactionAddEvent.guild.awaitSingle().getMemberById(reactionAddEvent.userId).awaitSingle(),
+            emoji = when (val emoji = reactionAddEvent.emoji) {
+                is ReactionEmoji.Unicode -> emoji.raw
+                is ReactionEmoji.Custom -> emoji.id.asString()
+                else -> ""
+            }
+        )
+    )
+}
+
+private suspend fun handleEvent(handle: HandleReactions) {
+    val rr = getReactionRole(handle) ?: return
+
+    rr.forEach {
+        val roleSnowflake = Snowflake.of(it.roleId)
+        val member = handle.member
+
+        when (it.rrType) {
+            REACTION_ROLE_GIVE, REACTION_ROLE_REMOVE -> giveOrRemoveRole(roleSnowflake, member)
+            REACTION_ROLE_GIVE_NOT_RETROACTIVE -> give(roleSnowflake, member)
+            REACTION_ROLE_REMOVE_NOT_RETROACTIVE -> remove(roleSnowflake, member)
+        }
     }
 }
 
-suspend fun giveRoleOnReaction(reactionAddEvent: ReactionAddEvent) {
-    val handle = HandleReactions(
-        guildId = reactionAddEvent.guildId.get(),
-        messageId = reactionAddEvent.messageId,
-        member = reactionAddEvent.guild.awaitSingle().getMemberById(reactionAddEvent.userId).awaitSingle(),
-        emoji = when (val emoji = reactionAddEvent.emoji) {
-            is ReactionEmoji.Unicode -> emoji.raw
-            is ReactionEmoji.Custom -> emoji.id.asString()
-            else -> ""
-        }
-    )
-
-
-    try {
-        val reactionRole = getReactionRole(handle)?: return
-
-        val roleSnowflake = Snowflake.of(reactionRole.roleId)
-
-        if (!handle.member.roleIds.contains(roleSnowflake))
-            handle.member.addRole(roleSnowflake).awaitSingle()
-        println("==== Role ${roleSnowflake.asString()} given to ${handle.member.displayName} ====")
-    } catch (e: Exception) {
-        println("==== No role ====")
-    }
-}
-
-fun getReactionRole(handle: HandleReactions): ReactionRole? {
+private fun getReactionRole(handle: HandleReactions): List<ReactionRoles>? {
     try {
         return transaction {
-            ReactionRole.find {
-                ReactionRoleTable.guildId.eq(handle.guildId.asLong())
-                    .and(ReactionRoleTable.messageId.eq(handle.messageId.asLong()))
-                    .and(ReactionRoleTable.emoji.eq(handle.emoji))
-            }.first()
+            ReactionRoles.find {
+                ReactionRolesTable.guildId.eq(handle.guildId.asLong())
+                    .and(ReactionRolesTable.messageId.eq(handle.messageId.asLong()))
+                    .and(ReactionRolesTable.emoji.eq(handle.emoji))
+            }.copy().toList()
         }
-    }catch(e:Exception){
-        e.printStackTrace()
+    } catch (e: Exception) {
+        println("Can't retrieve a role")
     }
     return null
 }
 
+private suspend fun giveOrRemoveRole(roleId: Snowflake, member: Member) {
+    val roleCommand = if (!member.roleIds.contains(roleId)) member.addRole(roleId) else member.removeRole(roleId)
+    roleCommand.awaitSingleOrNull()
+}
+
+private suspend fun give(roleId: Snowflake, member: Member) = member.addRole(roleId).awaitSingleOrNull()
+private suspend fun remove(roleId: Snowflake, member: Member) = member.removeRole(roleId).awaitSingleOrNull()
