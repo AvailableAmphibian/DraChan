@@ -26,5 +26,7 @@ On this project I used :
 > To make asynchronous calls as Discord4J uses [Project Reactor](https://projectreactor.io/).
 - [Exposed](https://github.com/JetBrains/Exposed) // [SQLite](https://sqlite.org/index.html)
 > To use a SQL database
-- [GraphQL](https://github.com/ExpediaGroup/graphql-kotlin)
-> For some calls to API (might be removed)
+- [Retrofit](https://square.github.io/retrofit/)
+> To make calls to REST API
+- [SWarFarm](https://swarfarm.com/api/v2/)
+> SWarFarm's API for Summoners War related commands
