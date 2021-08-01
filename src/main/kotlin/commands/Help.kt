@@ -1,30 +1,23 @@
 package commands
 
-import discord4j.core.`object`.entity.Message
+import discord4j.core.event.domain.interaction.SlashCommandEvent
 import discord4j.rest.util.Color
-import isSentByOwner
-import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
+import setFooter
 
-suspend fun help(message: Message) {
-    val channel = message.channel.awaitSingle()
-
-    channel.createMessage { spec ->
-        spec.setContent(if (isSentByOwner(message)) "${message.author.get().mention} thinks you need help, here it is :" else "Here's the help panel ${message.author.get().mention}, take a nice look at it !")
-            .setEmbed {
-                it.setTitle("Help panel")
-                    .setColor(Color.CYAN)
-                    .setDescription(
-                        """
-                        |**`?help`** -> Displays this
-                        |**`?ping`** -> A bit of a useless command, returns "Pong?"
-                        |**`?melody`** -> Shows something about a friend :eyes: (Needs improvement)
-                        |**`?dice`** -> Returns a random number between 1 and 6 (both included). (Needs improvement)
-                        |**`?reactionRole {channelId} {messageId} {roleMention or id} {Number between 1 and 4 included}`** -> Creates a new reaction role . Needs "Manage channel" and "Manage roles" permissions.
-                        |
-                        |Aliases :
-                        |<@843037701773983786> -> alias of `?help`
-                    """.trimMargin()
-                    )
-            }
-    }.awaitSingle()
+suspend fun help(slashCommandEvent: SlashCommandEvent){
+    slashCommandEvent.reply { spec ->
+        spec.setContent("Here's the help panel mate !")
+        spec.addEmbed {
+            it.setTitle("Help panel")
+                .setColor(Color.PINK)
+                .addField("help", "This command.",false)
+                .addField("ping", "Command which returns \"Pong\\\".",false)
+                .addField("reactionRole", "Creates a ReactionRole, see command's options.",false)
+                .addField("swskills", "Displays the skills of a monster from Summoners War or if precised the details of the skill.", false)
+                .addField("sw_monster","Displays the stats of a monster from Summoners War.", false)
+                .addField("bonk", "BONK", false)
+                .setFooter("")
+        }
+    }.awaitSingleOrNull()
 }
