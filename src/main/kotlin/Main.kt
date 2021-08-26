@@ -152,7 +152,10 @@ fun main(args: Array<String>) {
                     gatewayDiscordClient.on(MemberJoinEvent::class.java)
                         .asFlow()
                         .collect {
-                            println("======= User joined ! =======")
+                            println("""======= User joined ! =======
+                                |Username : ${it.member.displayName}
+                                |Guild : ${it.member.guild.awaitSingleOrNull()}
+                            """.trimMargin())
                             onUserJoined(member = it.member)
                         }
                 }
@@ -190,10 +193,17 @@ fun main(args: Array<String>) {
                                     "sw_monster" -> getMonster(it)
                                     "bonk" -> bonk(it)
                                 }
+                                println("""Answered to :
+                                    |${it.commandName}
+                                    |${it.interaction.member.get().displayName } / ${it.interaction.member.get().nickname } #${it.interaction.member.get().discriminator}
+                                """.trimMargin())
                             } catch (e: NoSuchElementException) {
                                 it.reply { spec ->
                                     spec.setContent("Too much options provided, retry")
                                 }
+                                e.printStackTrace()
+                            }catch (e:Exception){
+                                e.printStackTrace()
                             }
                         }
                 }

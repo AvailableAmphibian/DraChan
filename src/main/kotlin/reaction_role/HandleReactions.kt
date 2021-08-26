@@ -55,6 +55,12 @@ suspend fun handleReactionAddedEvent(reactionAddEvent: ReactionAddEvent) {
 private suspend fun handleEvent(handle: HandleReactions) {
     val rr = getReactionRole(handle) ?: return
 
+    println("""
+        Member : ${handle.member}
+        Guild : ${handle.guildId}
+        Reaction : ${handle.messageId} | ${handle.emoji}
+    """.trimIndent())
+
     rr.forEach {
         val roleSnowflake = Snowflake.of(it.roleId)
         val member = handle.member
