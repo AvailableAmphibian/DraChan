@@ -7,8 +7,10 @@ import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import discord4j.core.`object`.command.ApplicationCommandInteractionOptionValue
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.reaction.ReactionEmoji
-import discord4j.core.event.domain.interaction.SlashCommandEvent
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.event.domain.message.ReactionAddEvent
+import discord4j.core.spec.EmbedCreateSpec
+import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import discord4j.rest.util.Permission
 import discord4j.rest.util.PermissionSet
 import kotlinx.coroutines.reactor.awaitSingle
@@ -25,15 +27,13 @@ object Reaction {
     var rrType: Int = 0
 }
 
-suspend fun reactionRole(slashCommandEvent: SlashCommandEvent) {
+suspend fun reactionRole(slashCommandEvent: ChatInputInteractionEvent) {
     val permissions = slashCommandEvent.interaction.member.get().basePermissions.awaitSingle()
 
     if (slashCommandEvent.interaction.guildId.isEmpty ||
         !permissions.containsAll(PermissionSet.of(Permission.MANAGE_CHANNELS, Permission.MANAGE_ROLES))
     ) {
-        slashCommandEvent.reply {
-            it.setContent("Sorry you don't have the required permissions mate")
-        }.awaitSingle()
+        slashCommandEvent.reply("Sorry you don't have the required permissions mate").awaitSingle()
         return
     }
 
@@ -47,15 +47,19 @@ suspend fun reactionRole(slashCommandEvent: SlashCommandEvent) {
         .map(ApplicationCommandInteractionOptionValue::asLong).orElse(1L)
 
     if (rrType !in REACTION_ROLE_GIVE..REACTION_ROLE_REMOVE_NOT_RETROACTIVE) {
-        slashCommandEvent.reply {
-            it.setContent("Please provide a good id")
-            it.addEmbed { spec ->
-                spec.addField("REACTION_ROLE_GIVE", "1", true)
-                spec.addField("REACTION_ROLE_REMOVE", "2", true)
-                spec.addField("REACTION_ROLE_GIVE_NOT_RETROACTIVE", "3", true)
-                spec.addField("REACTION_ROLE_REMOVE_NOT_RETROACTIVE", "4", true)
-            }
-        }.awaitSingleOrNull()
+        slashCommandEvent.reply(
+            InteractionApplicationCommandCallbackSpec.builder()
+                .content("Please provide a good id")
+                .addEmbed(
+                    EmbedCreateSpec.builder()
+                        .addField("REACTION_ROLE_GIVE", "1", true)
+                        .addField("REACTION_ROLE_REMOVE", "2", true)
+                        .addField("REACTION_ROLE_GIVE_NOT_RETROACTIVE", "3", true)
+                        .addField("REACTION_ROLE_REMOVE_NOT_RETROACTIVE", "4", true)
+                        .build()
+                )
+                .build()
+        ).awaitSingleOrNull()
         return
     }
 
@@ -69,6 +73,7 @@ suspend fun reactionRole(slashCommandEvent: SlashCommandEvent) {
     slashCommandEvent.reply("Please react to this message with the emoji you want !").awaitSingleOrNull()
 }
 
+//fixme : Verify if this emoji is available in this guild
 suspend fun finishReactionRoleCreation(reactionAddEvent: ReactionAddEvent) {
     Reaction.isCreatingReactionRole = false
 

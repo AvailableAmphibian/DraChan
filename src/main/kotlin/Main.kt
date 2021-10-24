@@ -1,10 +1,7 @@
 import commands.*
 import discord4j.common.util.Snowflake
 import discord4j.core.DiscordClient
-import discord4j.core.`object`.presence.Activity
-import discord4j.core.`object`.presence.Presence
 import discord4j.core.event.domain.guild.MemberJoinEvent
-import discord4j.core.event.domain.interaction.SlashCommandEvent
 import discord4j.core.event.domain.message.ReactionAddEvent
 import discord4j.core.event.domain.message.ReactionRemoveEvent
 import discord4j.discordjson.json.ApplicationCommandOptionData
@@ -12,7 +9,6 @@ import discord4j.discordjson.json.ApplicationCommandRequest
 import discord4j.discordjson.json.UserData
 import discord4j.gateway.intent.Intent
 import discord4j.gateway.intent.IntentSet
-import discord4j.rest.util.ApplicationCommandOptionType
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
@@ -32,6 +28,10 @@ import reactor.core.publisher.Mono
 import commands.getMonster
 import swarfarm_models.MonsterId
 import commands.swSkills
+import discord4j.core.`object`.command.ApplicationCommandOption
+import discord4j.core.`object`.presence.ClientActivity
+import discord4j.core.`object`.presence.ClientPresence
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import java.sql.Connection
 
 object Main {
@@ -62,8 +62,8 @@ fun main(args: Array<String>) {
     val appId = Snowflake.asLong(client.applicationInfo.block()!!.id())
 
     /*Defining commands*/
-    val commandList = ArrayList<ApplicationCommandRequest>()
-    commandList.apply {
+    val newCommands = ArrayList<ApplicationCommandRequest>()
+    newCommands.apply {
         //Ping command definition
         add(createCommand("ping", "Ping command."))
         //Help command definition
@@ -75,16 +75,16 @@ fun main(args: Array<String>) {
                 "Creates a ReactionRole.",
                 ApplicationCommandOptionData.builder().name("channel")
                     .description("The channel where the message is")
-                    .type(ApplicationCommandOptionType.CHANNEL.value).required(true).build(),
+                    .type(ApplicationCommandOption.Type.CHANNEL.value).required(true).build(),
                 ApplicationCommandOptionData.builder().name("message_id")
                     .description("The message's id. This is a long number (str)")
-                    .type(ApplicationCommandOptionType.STRING.value).required(true).build(),
+                    .type(ApplicationCommandOption.Type.STRING.value).required(true).build(),
                 ApplicationCommandOptionData.builder().name("role").description("The role involved")
-                    .type(ApplicationCommandOptionType.ROLE.value).required(true).build(),
+                    .type(ApplicationCommandOption.Type.ROLE.value).required(true).build(),
                 ApplicationCommandOptionData.builder()
                     .name("rr_type")
                     .description("1 for a classic, 2 for a reversed, 3 for giving not retroactive, 4 for removing not retroactive.")
-                    .type(ApplicationCommandOptionType.INTEGER.value)
+                    .type(ApplicationCommandOption.Type.INTEGER.value)
                     .required(false)
                     .build()
             )
@@ -93,16 +93,16 @@ fun main(args: Array<String>) {
             createCommand(
                 "swskills", "Displays skills of a monster.",
                 ApplicationCommandOptionData.builder().name("name").description("The monster's name")
-                    .type(ApplicationCommandOptionType.STRING.value).required(true).build(),
+                    .type(ApplicationCommandOption.Type.STRING.value).required(true).build(),
                 ApplicationCommandOptionData.builder().name("skill_number").description("A single skill")
-                    .type(ApplicationCommandOptionType.INTEGER.value).required(false).build()
+                    .type(ApplicationCommandOption.Type.INTEGER.value).required(false).build()
             )
         )
         add(
             createCommand(
                 "sw_monster", "Displays information about a monster.",
                 ApplicationCommandOptionData.builder().name("name").description("The monster's name")
-                    .type(ApplicationCommandOptionType.STRING.value).required(true).build()
+                    .type(ApplicationCommandOption.Type.STRING.value).required(true).build()
             )
         )
         add(
@@ -110,7 +110,7 @@ fun main(args: Array<String>) {
                 "bonk",
                 "BONK!",
                 ApplicationCommandOptionData.builder().name("bonk_them").description("The monster's name")
-                    .type(ApplicationCommandOptionType.USER.value).required(true).build()
+                    .type(ApplicationCommandOption.Type.USER.value).required(true).build()
             )
         )
     }
@@ -127,15 +127,18 @@ fun main(args: Array<String>) {
             )
         )
         .setInitialPresence {
-            Presence.online(Activity.watching("Dra programming me."))
+            ClientPresence.online(ClientActivity.competing("on winning Dra's slimy heart ! ❤"))
         }.withGateway { gatewayDiscordClient ->
             println("~ Creating slashes ~")
 
 
             gatewayDiscordClient.restClient.applicationService.apply {
+                val currentCommands = this.getGlobalApplicationCommands(appId).collectList().block()
+                currentCommands?.forEach { deleteGlobalApplicationCommand(appId, it.id().toLong()) }
+
                 bulkOverwriteGlobalApplicationCommand(
                     appId,
-                    commandList
+                    newCommands
                 ).doOnError { it.printStackTrace() }.onErrorResume { Mono.empty() }.blockLast()
             }
 
@@ -181,7 +184,7 @@ fun main(args: Array<String>) {
                 }
 
                 launch {
-                    gatewayDiscordClient.on(SlashCommandEvent::class.java)
+                    gatewayDiscordClient.on(ChatInputInteractionEvent::class.java)
                         .asFlow()
                         .collect {
                             try {
@@ -198,9 +201,7 @@ fun main(args: Array<String>) {
                                     |${it.interaction.member.get().displayName } / ${it.interaction.member.get().nickname } #${it.interaction.member.get().discriminator}
                                 """.trimMargin())
                             } catch (e: NoSuchElementException) {
-                                it.reply { spec ->
-                                    spec.setContent("Too much options provided, retry")
-                                }
+                                it.reply ("Too much options provided, retry").awaitSingleOrNull()
                                 e.printStackTrace()
                             }catch (e:Exception){
                                 e.printStackTrace()

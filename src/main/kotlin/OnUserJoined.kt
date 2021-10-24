@@ -1,5 +1,6 @@
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Member
+import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -37,14 +38,15 @@ private suspend fun userJoined(member: Member, roleId: Long, embedColor: Color, 
     member.addRole(Snowflake.of(roleId)).awaitSingleOrNull()
     val privateChannel = member.privateChannel.awaitSingle()
 
-    privateChannel.createEmbed {
-        it.setColor(embedColor)
-            .setDescription(
+    privateChannel.createMessage(
+        EmbedCreateSpec.builder()
+            .color(embedColor)
+            .description(
                 """
                 |Hey <@${member.id.asLong()}> !
                 |$joinText
                 """.trimMargin()
-            )
-            .setFooter("")
-    }.awaitSingleOrNull()
+            ).setFooter("")
+            .build()
+    ).awaitSingleOrNull()
 }
