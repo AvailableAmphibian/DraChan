@@ -17,6 +17,11 @@ import swarfarm_models.Monster
 import swarfarm_models.MonsterId
 import swarfarm_models.Skill
 
+// Commands
+
+/**
+ * Used when the `/sw_monster` command is called
+ */
 suspend fun getMonster(event: ChatInputInteractionEvent) {
     val name = event.getOption("name").flatMap(ApplicationCommandInteractionOption::getValue)
         .map(ApplicationCommandInteractionOptionValue::asString).orElse("~")
@@ -51,6 +56,9 @@ suspend fun getMonster(event: ChatInputInteractionEvent) {
     })
 }
 
+/**
+ * Used when the `/swskills` command is called
+ */
 suspend fun swSkills(event: ChatInputInteractionEvent) {
     val name = event.getOption("name").flatMap(ApplicationCommandInteractionOption::getValue)
         .map(ApplicationCommandInteractionOptionValue::asString).orElse("~")
@@ -76,6 +84,36 @@ suspend fun swSkills(event: ChatInputInteractionEvent) {
     event.reply("Skill number provided does not match").awaitSingleOrNull()
 }
 
+// API Helpers
+
+/**
+ * Used when asking for a single skill.
+ */
+private fun displaySingleSkill(monster: MonsterId, event: ChatInputInteractionEvent, skillNumber: Long) {
+    RetrofitInstance.SW_API.getSkill(monster.skills[(skillNumber - 1).toInt()]).enqueue(object : Callback<Skill> {
+        override fun onResponse(call: Call<Skill>, response: Response<Skill>) {
+            val skill = response.body()!!
+
+            event.reply(InteractionApplicationCommandCallbackSpec.builder()
+                .addEmbed(EmbedCreateSpec.builder()
+                    .setHeader(monsterId = monster)
+                    .addUniqueSkillField(skill = skill)
+                    .build())
+                .build()
+            ).block()
+        }
+
+        override fun onFailure(call: Call<Skill>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+
+}
+
+/**
+ * Used when asking for all skills.
+ */
 private suspend fun displayAllSkills(monster: MonsterId, event: ChatInputInteractionEvent) {
     val skills = ArrayList<Skill>()
 
@@ -100,98 +138,24 @@ private suspend fun displayAllSkills(monster: MonsterId, event: ChatInputInterac
             )
             .build()
     ).awaitSingleOrNull()
-
-    //TODO: Delete comment
-//    event.reply { spec ->
-//        spec.addEmbed {
-//            it.setHeader(monsterId = monster)
-//            skills.forEach { skill ->
-//                it.addSkillField(skill = skill)
-//            }
-//        }
-//    }.awaitSingleOrNull()
 }
 
-private fun displaySingleSkill(monster: MonsterId, event: ChatInputInteractionEvent, skillNumber: Long) {
-    RetrofitInstance.SW_API.getSkill(monster.skills[(skillNumber - 1).toInt()]).enqueue(object : Callback<Skill> {
-        override fun onResponse(call: Call<Skill>, response: Response<Skill>) {
-            val skill = response.body()!!
+// Spec helpers
 
-            event.reply(InteractionApplicationCommandCallbackSpec.builder()
-                .addEmbed(EmbedCreateSpec.builder()
-                    .setHeader(monsterId = monster)
-                    .addUniqueSkillField(skill = skill)
-                    .build())
-                .build()
-            ).block()
+/**
+ * Used to generate a custom embed for every SW related command.
+ * @param monsterId The monster displayed in the embed.
+ * @return an embed spec builder with footer and monster set.
+ */
+private fun EmbedCreateSpec.Builder.setHeader(monsterId: MonsterId): EmbedCreateSpec.Builder =
+    this.author(monsterId.name, null, monsterId.getMonsterIcon())
+        .setFooter("Data fetched from SWarFarm's API !")
+        .color(Element.getElement(monsterId.element).color)
 
-            //TODO: Delete comment
-//            event.reply { spec ->
-//                spec.addEmbed {
-//                    it.setHeader(monsterId = monster)
-//                    it.addUniqueSkillField(skill = skill)
-//                }
-//            }.block()
-        }
-
-        override fun onFailure(call: Call<Skill>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-
-}
-
-private fun ArrayList<EmbedCreateFields.Field>.addSkillField(skill: Skill) {
-    this.add(EmbedCreateFields.Field.of("Skill ${skill.slot} : ${skill.name}", skill.description, false))
-
-    if (skill.scales.isEmpty()) {
-        this.add(EmbedCreateFields.Field.of("Skill information", "Support ${skill.targetType()}", true))
-        if (skill.getPositiveEffects().isNotEmpty())
-            this.add(EmbedCreateFields.Field.of("Positive effects", skill.showBuffs(), true))
-        if (skill.getNegativeEffects().isNotEmpty())
-            this.add(EmbedCreateFields.Field.of("Negative effects", skill.showDebuffs(), true))
-    } else {
-        this.add(
-            EmbedCreateFields.Field.of(
-                "Skill information",
-                "${skill.targetType()}, scales on ${skill.showScales()}",
-                true
-            )
-        )
-        this.add(EmbedCreateFields.Field.of("Formula", "`${skill.multiplierFormula}`", true))
-    }
-}
-
-private fun EmbedCreateSpec.Builder.addUniqueSkillField(skill: Skill): EmbedCreateSpec.Builder {
-    this.title("Skill ${skill.slot} : ${skill.name}")
-        .description(skill.description)
-
-    if (skill.scales.isEmpty())
-        this.addField(
-            "Skill information",
-            "Support ${skill.targetType()}",
-            false
-        )
-    else
-        this.addField(
-            "Skill information",
-            "${skill.targetType()}, scales on ${skill.showScales()} as **`${skill.multiplierFormula}`**",
-            false
-        )
-
-    if (skill.upgrades.isNotEmpty())
-        this.addField("Upgrades", skill.showUpgrades(), true)
-    if (skill.getPositiveEffects().isNotEmpty())
-        this.addField("Positive effects", skill.showBuffs(), true)
-    if (skill.getNegativeEffects().isNotEmpty())
-        this.addField("Negative effects", skill.showDebuffs(), true)
-
-    return this
-}
-
-private fun generateFields(monster: Monster): ArrayList<EmbedCreateFields.Field> =
-    ArrayList<EmbedCreateFields.Field>().apply {
+/**
+ * Used to generate the stats fields of a monster.
+ */
+private fun generateFields(monster: Monster): ArrayList<EmbedCreateFields.Field> = ArrayList<EmbedCreateFields.Field>().apply {
         add(
             EmbedCreateFields.Field.of(
                 "Base Stats (level 40)",
@@ -224,8 +188,59 @@ private fun generateFields(monster: Monster): ArrayList<EmbedCreateFields.Field>
             )
     }
 
+/**
+ * Used to generate the embed when a single field is asked.
+ */
+private fun EmbedCreateSpec.Builder.addUniqueSkillField(skill: Skill): EmbedCreateSpec.Builder {
+    this.title("Skill ${skill.slot} : ${skill.name}")
+        .description(skill.description)
 
-private fun EmbedCreateSpec.Builder.setHeader(monsterId: MonsterId): EmbedCreateSpec.Builder =
-    this.author(monsterId.name, null, monsterId.getMonsterIcon())
-        .setFooter("Data fetched from SWarFarm's API !")
-        .color(Element.getElement(monsterId.element).color)
+    if (skill.scales.isEmpty())
+        this.addField(
+            "Skill information",
+            "Support ${skill.targetType()}",
+            false
+        )
+    else
+        this.addField(
+            "Skill information",
+            "${skill.targetType()}, scales on ${skill.showScales()} as **`${skill.multiplierFormula}`**",
+            false
+        )
+
+    if (skill.upgrades.isNotEmpty())
+        this.addField("Upgrades", skill.showUpgrades(), true)
+    if (skill.getPositiveEffects().isNotEmpty())
+        this.addField("Positive effects", skill.showBuffs(), true)
+    if (skill.getNegativeEffects().isNotEmpty())
+        this.addField("Negative effects", skill.showDebuffs(), true)
+
+    return this
+}
+
+/**
+ * Used to generate the embed fields when asking for multiple skills.
+ */
+private fun ArrayList<EmbedCreateFields.Field>.addSkillField(skill: Skill) {
+    this.add(EmbedCreateFields.Field.of("Skill ${skill.slot} : ${skill.name}", skill.description, false))
+
+    if (skill.scales.isEmpty()) {
+        this.add(EmbedCreateFields.Field.of("Skill information", "Support ${skill.targetType()}", true))
+        if (skill.getPositiveEffects().isNotEmpty())
+            this.add(EmbedCreateFields.Field.of("Positive effects", skill.showBuffs(), true))
+        if (skill.getNegativeEffects().isNotEmpty())
+            this.add(EmbedCreateFields.Field.of("Negative effects", skill.showDebuffs(), true))
+    } else {
+        this.add(
+            EmbedCreateFields.Field.of(
+                "Skill information",
+                "${skill.targetType()}, scales on ${skill.showScales()}",
+                true
+            )
+        )
+        this.add(EmbedCreateFields.Field.of("Formula", "`${skill.multiplierFormula}`", true))
+    }
+}
+
+
+

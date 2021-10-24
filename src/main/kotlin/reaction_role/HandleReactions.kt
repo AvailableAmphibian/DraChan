@@ -54,6 +54,7 @@ suspend fun handleReactionAddedEvent(reactionAddEvent: ReactionAddEvent) {
 
 private suspend fun handleEvent(handle: HandleReactions) {
     val rr = getReactionRole(handle) ?: return
+    if (rr.isEmpty()) return
 
     println("""
         Member : ${handle.member}

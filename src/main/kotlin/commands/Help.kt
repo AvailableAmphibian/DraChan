@@ -18,7 +18,7 @@ suspend fun help(slashCommandEvent: ChatInputInteractionEvent) = slashCommandEve
             .addField("swskills", "Displays the skills of a monster from Summoners War or if precised the details of the skill.", false)
             .addField("sw_monster","Displays the stats of a monster from Summoners War.", false)
             .addField("bonk", "BONK", false)
-            .setFooter("")
+            .setFooter()
             .build())
         .build()
     ).awaitSingleOrNull()

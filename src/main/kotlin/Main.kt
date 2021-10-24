@@ -59,6 +59,7 @@ fun main(args: Array<String>) {
     println("--- Initiating monsterList ---")
     MonsterId.initMonsterList()
 
+    println("--- Defining and retrieving discord relating things ---")
     val appId = Snowflake.asLong(client.applicationInfo.block()!!.id())
 
     /*Defining commands*/
@@ -89,6 +90,7 @@ fun main(args: Array<String>) {
                     .build()
             )
         )
+        //Swskills command definition
         add(
             createCommand(
                 "swskills", "Displays skills of a monster.",
@@ -98,6 +100,7 @@ fun main(args: Array<String>) {
                     .type(ApplicationCommandOption.Type.INTEGER.value).required(false).build()
             )
         )
+        //Sw_monster command definition
         add(
             createCommand(
                 "sw_monster", "Displays information about a monster.",
@@ -105,6 +108,7 @@ fun main(args: Array<String>) {
                     .type(ApplicationCommandOption.Type.STRING.value).required(true).build()
             )
         )
+        //Bonk command definition
         add(
             createCommand(
                 "bonk",
@@ -192,7 +196,7 @@ fun main(args: Array<String>) {
                                     "ping" -> it.reply("Pong\\").awaitSingleOrNull()
                                     "help" -> help(it)
                                     "rr" -> reactionRole(it)
-                                    "swskills", "swskillsUnawakened" -> swSkills(it)
+                                    "swskills" -> swSkills(it)
                                     "sw_monster" -> getMonster(it)
                                     "bonk" -> bonk(it)
                                 }
