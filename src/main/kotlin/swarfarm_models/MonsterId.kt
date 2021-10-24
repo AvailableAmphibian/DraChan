@@ -36,10 +36,13 @@ data class MonsterId(
             else
                 Companion.monsterList = completeMonsterList(monsterList, 2)
 
+            println("-- Monsters retrieved --")
+
             setSecondaryNames()
         }
 
         private tailrec fun completeMonsterList(monsterList: ArrayList<MonsterId>, page: Int): List<MonsterId> {
+            println("Current page : $page")
             val response = RetrofitInstance.SW_API.getMonsterList(page).execute().body()!!
             monsterList.addAll(response.results)
 

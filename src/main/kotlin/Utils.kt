@@ -2,20 +2,36 @@ import discord4j.core.`object`.entity.Message
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.discordjson.json.ApplicationCommandOptionData
 import discord4j.discordjson.json.ApplicationCommandRequest
+import swarfarm_models.Element
+import swarfarm_models.MonsterId
 
+//Command helper
+
+/**
+ * Get @Dra#5092
+ */
 fun isSentByOwner(message: Message) = message.author.get().id.asLong() == 286443116326682624
 
-fun EmbedCreateSpec.setFooter(addedText: String): EmbedCreateSpec =
-    this.setFooter(
-        "Programmed from the ❤ by Dra !️ $addedText",
-        createAvatarUrl(Main.owner.avatar().get(), Main.owner.id().asLong())
-    )
+/**
+ * Footer helper
+ */
+fun EmbedCreateSpec.Builder.setFooter(addedText: String): EmbedCreateSpec.Builder = this.footer(
+    "Programmed from the ❤ by Dra !️ $addedText",
+    createAvatarUrl(Main.owner.avatar().get(), Main.owner.id().asLong()))
 
+fun EmbedCreateSpec.Builder.setFooter(): EmbedCreateSpec.Builder = this.setFooter("")
+
+/**
+ * Helper used to retrieve a profile picture
+ */
 fun createAvatarUrl(avatar: String, userId: Long): String {
     val url = "https://cdn.discordapp.com/avatars/$userId/$avatar"
     return if (avatar.startsWith("a_")) "$url.gif" else "$url.png"
 }
 
+/**
+ * Helper used to create commands
+ */
 fun createCommand(
     name: String,
     description: String,
