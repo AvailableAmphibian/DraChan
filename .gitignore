@@ -1,8 +1,7 @@
-/.idea/
-/target
-/.gitignore
-/mainModule.iml
-/out/
-/build/
-/.gradle/
-drachan.sqlite
+./.idea/
+./target
+./mainModule.iml
+./out/
+./build/
+./.gradle/
+./drachan.sqlite
