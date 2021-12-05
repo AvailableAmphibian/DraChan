@@ -15,6 +15,24 @@ to make a bot for 2 main reasons :
 - I prefer to have the fewer bots possible on my servers
 - That's always a good way of training
 
+## How to use her ?
+
+To use this bot you'll need 3 things :
+- Clone this repo
+```shell
+# ssh
+$ git clone git@github.com:HFDrae/DraChan.git
+
+#https
+$ git clone https://github.com/HFDrae/DraChan.git
+```
+- Get a Discord token for your bot [here](https://discord.com/developers/applications).
+- Find a way to host it (for example, I'm hosting it on my Raspberry PI).
+
+## How to contribute ?
+
+To contribute to this repo, feel free to fork it and make a pull request or DM me on Discord (@Dra#5092) !
+
 ## Libraries/Language(s) used
 
 On this project I used :
